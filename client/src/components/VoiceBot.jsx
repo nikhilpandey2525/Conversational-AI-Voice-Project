@@ -1,100 +1,86 @@
-/* eslint-disable no-unused-vars */
 import { useState } from "react"
 import axios from "axios"
 
-function VoiceBot() {
+function VoiceBot(){
 
-  const [messages, setMessages] = useState([])
-  const [listening, setListening] = useState(false)
-  const recognition = window.SpeechRecognition
-    ? new window.SpeechRecognition()
-    : new window.webkitSpeechRecognition()
+const [messages,setMessages] = useState([])
 
-  recognition.lang = "en-US"
-  recognition.continuous = false
+const recognition =window.webkitSpeechRecognition ? new window.webkitSpeechRecognition() : new window.SpeechRecognition()
 
-  recognition.onresult = async (event) => {
+recognition.lang = "en-US"
 
-    const text = event.results[0][0].transcript
-    console.log("🎤 Voice captured:", text)
+recognition.onresult = async (event)=>{
 
-    setMessages(prev => [...prev, { role: "user", text }])
+const text = event.results[0][0].transcript
 
-    try {
-      console.log("📡 Sending request to backend...")
-      const res = await axios.post("http://localhost:5000/chat", {
-        message: text
-      })
-      console.log("📥 Response received:", res.data)
-      const reply = res.data.reply
+console.log("🎤 User:",text)
 
-      setMessages(prev => [...prev, { role: "bot", text: reply }])
+setMessages(prev=>[...prev,{role:"user",text}])
 
-      speak(reply)
+const res = await axios.post("http://localhost:5000/api/chat",{
+message:text
+})
 
-    } catch (error) {
-      console.error("❌ API error:", error)
-    }
-  }
+const reply = res.data.reply
 
-  function startListening() {
+console.log("🤖 Bot:",reply)
 
-    setListening(true)
-    recognition.start()
+setMessages(prev=>[...prev,{role:"bot",text:reply}])
 
-  }
+speak(reply)
 
-  function speak(text) {
-    console.log("🔊 Bot speaking:", text)
-    const speech = new SpeechSynthesisUtterance(text)
+}
 
-    speech.lang = "en-US"
+function startListening(){
 
-    speech.onend = () => {
-      console.log("🎧 Listening again...")
-      recognition.start()
-    }
+recognition.start()
 
-    window.speechSynthesis.speak(speech)
+}
 
-  }
+function speak(text){
 
-  return (
+const speech = new SpeechSynthesisUtterance(text)
 
-    <div className="bg-white p-6 rounded-xl shadow-lg w-100">
+speech.onend = ()=>{
+recognition.start()
+}
 
-      <h1 className="text-xl font-bold mb-4">
-        AI Therapist Voice Bot
-      </h1>
+window.speechSynthesis.speak(speech)
 
-      <button
-        onClick={startListening}
-        className="bg-blue-500 text-white px-4 py-2 rounded"
-      >
-        🎤 Start Talking
-      </button>
+}
 
-      <div className="mt-6 space-y-2">
+return(
 
-        {messages.map((msg, index) => (
+<div className="p-6 bg-[#242424] shadow-lg rounded-xl w-[420px]">
 
-          <div key={index}>
+<h1 className="text-xl font-bold mb-4">
+AI Therapist Voice Bot
+</h1>
 
-            <span className="font-semibold">
-              {msg.role === "user" ? "You: " : "Therapist: "}
-            </span>
+<button
+onClick={startListening}
+className="bg-blue-500 text-white px-4 py-2 rounded"
+>
+🎤 Start Talking
+</button>
 
-            {msg.text}
+<div className="mt-6 space-y-2">
 
-          </div>
+{messages.map((msg,i)=>(
+<div key={i}>
+<strong>
+{msg.role==="user"?"You: ":"Therapist: "}
+</strong>
+{msg.text}
+</div>
+))}
 
-        ))}
+</div>
 
-      </div>
+</div>
 
-    </div>
+)
 
-  )
 }
 
 export default VoiceBot
